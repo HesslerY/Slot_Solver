@@ -17,26 +17,35 @@ public:
 protected:
 	int nbeta(); // return no. of modes in waveguide
 
+	inline bool params_status() { return params_defined;  }
+
 	double kah(int i); // transverse wavenumber in high-index slab region
 	double gsl(int i); // transverse wavenumber in slot region
 	double gcl(int i); // transverse wavenumber in cladding region
 	double prop_const(int i); // return i^{th} computed propagation constant
 
 protected:
-	double wavelength; // wavelength of light in the slot, in units of um
+	bool params_defined; 
+
+	double lambda; // wavelength of light in the slot, in units of um
 	double k; // wavenumber of light in the slot, in units of um^{-1}
+	
 	double n_sl; // RI of material in the slot
 	double n_cl; // RI of material in the cladding, may be the same as that in the slot
 	double n_h; // RI of high index slab region
+
 	double w_sl; // width of slot region in units of um
 	double w_h; // width of high-index slab region in units of um
 
 	double k_nh_sqr; // k_{0}^{2} n_{h}^{2}
 	double k_nsl_sqr; // k_{0}^{2} n_{sl}^{2}
 	double k_ncl_sqr; // k_{0}^{2} n_{cl}^{2}
+	
 	double nh_nsl_sqr; // ratio (n_{h} / n_{sl})^{2}
 	double nh_ncl_sqr; // ratio (n_{h} / n_{cl})^{2}
+	
 	double k_inv; // 1 / k_{0}
+
 	double nh_sqr_inv; // 1 / n_{h}^{2}
 	double nsl_sqr_inv; // 1 / n_{sl}^{2}
 	double ncl_sqr_inv; // 1 / n_{cl}^{2}
@@ -49,9 +58,9 @@ protected:
 class slot_neff : protected slot {
 public:
 	slot_neff(); 
+	slot_neff(double wavelength, double slot_width, double slab_width, double slot_index, double slab_index, double cladding_index); 
 
-
-	void set_params(); 
+	void set_params(double wavelength, double slot_width, double slab_width, double slot_index, double slab_index, double cladding_index); 
 
 	void neff_search(); 
 
