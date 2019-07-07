@@ -32,21 +32,90 @@ double slot::kah(int i)
 {
 	// transverse wavenumber in high-index slab region
 
-	return 0.0; 
+	try {
+		bool c1 = i > -1 ? true : false; 
+		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false; 
+		bool c3 = i < static_cast<int>(beta.size()) ? true : false; 
+		bool c10 = c1 && c2 && c3; 
+
+
+		if (c10) {
+			return 0.0; 
+		}
+		else {
+			std::string reason;
+			reason = "Error: double slot::kah(int i)\n";
+			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
+			if (!c2) reason += "propagation constants not computed\n";
+			throw std::invalid_argument(reason);
+
+			return 0.0; 
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
 }
 
 double slot::gsl(int i)
 {
 	// transverse wavenumber in slot region
 
-	return 0.0;
+	try {
+		bool c1 = i > -1 ? true : false;
+		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false;
+		bool c3 = i < static_cast<int>(beta.size()) ? true : false;
+		bool c10 = c1 && c2 && c3;
+
+
+		if (c10) {
+			return 0.0;
+		}
+		else {
+			std::string reason;
+			reason = "Error: double slot::gsl(int i)\n";
+			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
+			if (!c2) reason += "propagation constants not computed\n";
+			throw std::invalid_argument(reason);
+
+			return 0.0;
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
 }
 
 double slot::gcl(int i)
 {
 	// transverse wavenumber in cladding region
 
-	return 0.0;
+	try {
+		bool c1 = i > -1 ? true : false;
+		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false;
+		bool c3 = i < static_cast<int>(beta.size()) ? true : false;
+		bool c10 = c1 && c2 && c3;
+
+
+		if (c10) {
+			return 0.0;
+		}
+		else {
+			std::string reason;
+			reason = "Error: double slot::gcl(int i)\n";
+			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
+			if (!c2) reason += "propagation constants not computed\n";
+			throw std::invalid_argument(reason);
+
+			return 0.0;
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
 }
 
 double slot::prop_const(int i)
