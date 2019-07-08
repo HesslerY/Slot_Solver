@@ -36,17 +36,19 @@ double slot::kah(int i)
 		bool c1 = i > -1 ? true : false; 
 		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false; 
 		bool c3 = i < static_cast<int>(beta.size()) ? true : false; 
-		bool c10 = c1 && c2 && c3; 
-
+		bool c10 = c1 && c2 && c3 && params_defined; 
 
 		if (c10) {
-			return 0.0; 
+			double v = k_nh_sqr - template_funcs::DSQR(beta[i]);
+
+			return v > 0.0 ? sqrt(v) : 0.0; 
 		}
 		else {
 			std::string reason;
 			reason = "Error: double slot::kah(int i)\n";
 			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
 			if (!c2) reason += "propagation constants not computed\n";
+			if (!params_defined) reason += "No parameters defined for the object\n"; 
 			throw std::invalid_argument(reason);
 
 			return 0.0; 
@@ -66,17 +68,19 @@ double slot::gsl(int i)
 		bool c1 = i > -1 ? true : false;
 		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false;
 		bool c3 = i < static_cast<int>(beta.size()) ? true : false;
-		bool c10 = c1 && c2 && c3;
-
+		bool c10 = c1 && c2 && c3 && params_defined;
 
 		if (c10) {
-			return 0.0;
+			double v = template_funcs::DSQR(beta[i]) - k_nsl_sqr;
+
+			return v > 0.0 ? sqrt(v) : 0.0;
 		}
 		else {
 			std::string reason;
 			reason = "Error: double slot::gsl(int i)\n";
 			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
 			if (!c2) reason += "propagation constants not computed\n";
+			if (!params_defined) reason += "No parameters defined for the object\n";
 			throw std::invalid_argument(reason);
 
 			return 0.0;
@@ -96,17 +100,19 @@ double slot::gcl(int i)
 		bool c1 = i > -1 ? true : false;
 		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false;
 		bool c3 = i < static_cast<int>(beta.size()) ? true : false;
-		bool c10 = c1 && c2 && c3;
-
+		bool c10 = c1 && c2 && c3 && params_defined;
 
 		if (c10) {
-			return 0.0;
+			double v = template_funcs::DSQR(beta[i]) - k_ncl_sqr;
+
+			return v > 0.0 ? sqrt(v) : 0.0;
 		}
 		else {
 			std::string reason;
 			reason = "Error: double slot::gcl(int i)\n";
 			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
 			if (!c2) reason += "propagation constants not computed\n";
+			if (!params_defined) reason += "No parameters defined for the object\n";
 			throw std::invalid_argument(reason);
 
 			return 0.0;
@@ -122,7 +128,30 @@ double slot::prop_const(int i)
 {
 	// return i^{th} computed propagation constant
 
-	return 0.0; 
+	try {
+		bool c1 = i > -1 ? true : false;
+		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false;
+		bool c3 = i < static_cast<int>(beta.size()) ? true : false;
+		bool c10 = c1 && c2 && c3 && params_defined;
+
+		if (c10) {
+			return beta[i];
+		}
+		else {
+			std::string reason;
+			reason = "Error: double slot::prop_const(int i)\n";
+			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
+			if (!c2) reason += "propagation constants not computed\n";
+			if (!params_defined) reason += "No parameters defined for the object\n";
+			throw std::invalid_argument(reason);
+
+			return 0.0;
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
 }
 
 // Definition of the member functions for the slot_neff class
