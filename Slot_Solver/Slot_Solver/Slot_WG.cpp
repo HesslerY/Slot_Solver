@@ -245,26 +245,60 @@ void slot_neff::neff_search()
 	}
 }
 
-double slot_neff::eigenequation()
+double slot_neff::eigenequation(double x)
 {
+	// eigenequation whose roots define the propagation constant of the slot waveguide
+
 	try {
 
 		if (params_defined) {
+			
+			double xsqr, kah, gsl, gcl, phi, arg1, arg2, t1, t2, t3, tmp; 
 
+			xsqr = template_funcs::DSQR(x); 
+			
+			tmp = k_nh_sqr - xsqr; 
+			kah = tmp > 0 ? sqrt(tmp) : 0.0;
+
+			tmp = xsqr - k_nsl_sqr; 
+			gsl = tmp > 0 ? sqrt(tmp) : 0.0;
+
+			tmp = xsqr - k_ncl_sqr; 
+			gcl = tmp > 0.0 ? sqrt(tmp) : 0.0;
+
+			if (kah > 0.0) {
+				t2 = (gcl / kah); t3 = (gsl / kah); 
+			}
+			else {
+				t2 = t3 = 0.0; 
+			}
+			
+			//t2 = kah > 0.0 ? (gcl / kah) : 0.0; 
+			//t3 = kah > 0.0 ? (gsl / kah) : 0.0; 
+			
+			phi = atan(nh_ncl_sqr*t2);
+			
+			arg1 = kah * w_sl - phi; 
+			
+			arg2 = 0.5*gsl*w_sl; 
+			 
+			t1 = nh_nsl_sqr * t3; 
+
+			return tan(arg1) - t1 * tanh(arg2); 
 		}
 		else {
 			std::string reason;
 			reason = "Error: void slot_neff::double slot_neff::eigenequation()\n";
 			reason += "parameters not defined\n";
 			throw std::invalid_argument(reason);
+
+			return 0.0; 
 		}
 	}
 	catch (std::invalid_argument &e) {
 		useful_funcs::exit_failure_output(e.what());
 		exit(EXIT_FAILURE);
 	}
-
-	return 0.0; 
 }
 
 double slot_neff::phi()

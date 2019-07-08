@@ -65,7 +65,7 @@ public:
 	void neff_search(); 
 
 private:
-	double eigenequation(); 
+	double eigenequation(double x); 
 	double phi(); 
 
 	double zbrent(); 
