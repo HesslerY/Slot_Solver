@@ -50,6 +50,9 @@ protected:
 	double nsl_sqr_inv; // 1 / n_{sl}^{2}
 	double ncl_sqr_inv; // 1 / n_{cl}^{2}
 
+	double beta_high; // bounds on the search space for the slot effective index 
+	double beta_low; 
+
 	std::vector<double> beta; // TM propagation constants, in units of um^{-1}
 };
 
@@ -63,6 +66,8 @@ public:
 	void set_params(double wavelength, double slot_width, double slab_width, double slot_index, double slab_index, double cladding_index); 
 
 	void neff_search(); 
+
+	void print_eigenequation(); 
 
 private:
 	double eigenequation(double x); 

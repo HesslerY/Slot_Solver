@@ -11,7 +11,7 @@ slot::slot()
 	params_defined = false; 
 	lambda = k = n_sl = n_cl = n_h = w_sl = w_h = 0.0; 
 	k_nh_sqr = k_nsl_sqr = k_ncl_sqr = nh_nsl_sqr = nh_ncl_sqr = 0.0; 
-	k_inv = nh_sqr_inv = nsl_sqr_inv = ncl_sqr_inv = 0.0; 
+	beta_high = beta_low = k_inv = nh_sqr_inv = nsl_sqr_inv = ncl_sqr_inv = 0.0; 
 }
 
 slot::~slot()
@@ -201,7 +201,10 @@ void slot_neff::set_params(double wavelength, double slot_width, double slab_wid
 			nh_nsl_sqr = template_funcs::DSQR(n_h / n_sl); // ratio (n_{h} / n_{sl})^{2}
 			nh_ncl_sqr = template_funcs::DSQR(n_h / n_cl); // ratio (n_{h} / n_{cl})^{2}
 
-			k_nh_sqr = template_funcs::DSQR(k*n_h); // k_{0}^{2} n_{h}^{2}
+			beta_high = k * n_h; // search space bounds
+			beta_low = k * std::min(n_sl, n_cl); 
+
+			k_nh_sqr = template_funcs::DSQR(beta_high); // k_{0}^{2} n_{h}^{2}
 			k_nsl_sqr = template_funcs::DSQR(k*n_sl); // k_{0}^{2} n_{sl}^{2}
 			k_ncl_sqr = template_funcs::DSQR(k*n_cl); // k_{0}^{2} n_{cl}^{2}
 
@@ -278,7 +281,7 @@ double slot_neff::eigenequation(double x)
 			
 			phi = atan(nh_ncl_sqr*t2);
 			
-			arg1 = kah * w_sl - phi; 
+			arg1 = kah * w_h - phi; 
 			
 			arg2 = 0.5*gsl*w_sl; 
 			 
@@ -293,6 +296,56 @@ double slot_neff::eigenequation(double x)
 			throw std::invalid_argument(reason);
 
 			return 0.0; 
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
+}
+
+void slot_neff::print_eigenequation()
+{
+	// print the eigenequation data to a file for analysis
+	// R. Sheehan 8 - 7 - 2019
+
+	try {
+
+		if (params_defined) {
+
+			std::string name = "Slot_WG_Eigenequation.txt"; 
+
+			std::ofstream write(name, std::ios_base::out, std::ios_base::trunc);
+
+			if (write.is_open()) {
+				int Nsteps = 151;
+				double x, delta_x;
+
+				delta_x = (beta_high - beta_low) / (Nsteps - 1);
+				x = beta_low+delta_x;
+
+				int j = 1;
+				while (j < Nsteps-1) {
+					write << x << " , " << eigenequation(x) << "\n"; 
+					x += delta_x;
+					j++;
+				}
+
+				write.close();
+			}
+			else {
+				write.close();
+				std::string reason;
+				reason = "Error: void slot_neff::print_eigenequation()\n";
+				reason += "Filename: " + name + " is not valid\n";
+				throw std::invalid_argument(reason);
+			}
+		}
+		else {
+			std::string reason;
+			reason = "Error: void slot_neff::print_eigenequation()\n";
+			reason += "parameters not defined\n";
+			throw std::invalid_argument(reason);
 		}
 	}
 	catch (std::invalid_argument &e) {
