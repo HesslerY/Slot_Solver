@@ -64,150 +64,18 @@ void interval::set_xl_xu(double xl, double xu)
 slot::slot()
 {
 	// Default constructor
-	params_defined = false; 
-	lambda = k = n_sl = n_cl = n_h = w_sl = w_h = 0.0; 
+	coeffs_defined = beta_defined = params_defined = false;
+	lambda = k = n_sl = n_cl = n_h = w_sl = w_h = a = b = 0.0; 
 	k_nh_sqr = k_nsl_sqr = k_ncl_sqr = nh_nsl_sqr = nh_ncl_sqr = 0.0; 
 	beta_high = beta_low = k_inv = nh_sqr_inv = nsl_sqr_inv = ncl_sqr_inv = 0.0; 
+	beta = neff = kah = gsl = gcl = ampl = 0.0; 
+	c1 = c2 = c3 = c4 = c5 = c6 = c7 = c8 = c9 = c10 = 0.0; 
 }
 
 slot::~slot()
 {
 	// Deconstructor
-	params_defined = false; 
-	beta.clear(); 
-}
-
-int slot::nbeta()
-{
-	// return the number of computed propagation constants
-
-	return static_cast<int>(beta.size()); 
-}
-
-double slot::kah(int i)
-{
-	// transverse wavenumber in high-index slab region
-
-	try {
-		bool c1 = i > -1 ? true : false; 
-		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false; 
-		bool c3 = i < static_cast<int>(beta.size()) ? true : false; 
-		bool c10 = c1 && c2 && c3 && params_defined; 
-
-		if (c10) {
-			double v = k_nh_sqr - template_funcs::DSQR(beta[i]);
-
-			return v > 0.0 ? sqrt(v) : 0.0; 
-		}
-		else {
-			std::string reason;
-			reason = "Error: double slot::kah(int i)\n";
-			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
-			if (!c2) reason += "propagation constants not computed\n";
-			if (!params_defined) reason += "No parameters defined for the object\n"; 
-			throw std::invalid_argument(reason);
-
-			return 0.0; 
-		}
-	}
-	catch (std::invalid_argument &e) {
-		useful_funcs::exit_failure_output(e.what());
-		exit(EXIT_FAILURE);
-	}
-}
-
-double slot::gsl(int i)
-{
-	// transverse wavenumber in slot region
-
-	try {
-		bool c1 = i > -1 ? true : false;
-		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false;
-		bool c3 = i < static_cast<int>(beta.size()) ? true : false;
-		bool c10 = c1 && c2 && c3 && params_defined;
-
-		if (c10) {
-			double v = template_funcs::DSQR(beta[i]) - k_nsl_sqr;
-
-			return v > 0.0 ? sqrt(v) : 0.0;
-		}
-		else {
-			std::string reason;
-			reason = "Error: double slot::gsl(int i)\n";
-			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
-			if (!c2) reason += "propagation constants not computed\n";
-			if (!params_defined) reason += "No parameters defined for the object\n";
-			throw std::invalid_argument(reason);
-
-			return 0.0;
-		}
-	}
-	catch (std::invalid_argument &e) {
-		useful_funcs::exit_failure_output(e.what());
-		exit(EXIT_FAILURE);
-	}
-}
-
-double slot::gcl(int i)
-{
-	// transverse wavenumber in cladding region
-
-	try {
-		bool c1 = i > -1 ? true : false;
-		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false;
-		bool c3 = i < static_cast<int>(beta.size()) ? true : false;
-		bool c10 = c1 && c2 && c3 && params_defined;
-
-		if (c10) {
-			double v = template_funcs::DSQR(beta[i]) - k_ncl_sqr;
-
-			return v > 0.0 ? sqrt(v) : 0.0;
-		}
-		else {
-			std::string reason;
-			reason = "Error: double slot::gcl(int i)\n";
-			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
-			if (!c2) reason += "propagation constants not computed\n";
-			if (!params_defined) reason += "No parameters defined for the object\n";
-			throw std::invalid_argument(reason);
-
-			return 0.0;
-		}
-	}
-	catch (std::invalid_argument &e) {
-		useful_funcs::exit_failure_output(e.what());
-		exit(EXIT_FAILURE);
-	}
-}
-
-double slot::prop_const(int i)
-{
-	// return i^{th} computed propagation constant
-
-	try {
-		bool c1 = i > -1 ? true : false;
-		bool c2 = static_cast<int>(beta.size()) > 0 ? true : false;
-		bool c3 = i < static_cast<int>(beta.size()) ? true : false;
-		bool c10 = c1 && c2 && c3 && params_defined;
-
-		if (c10) {
-			return beta[i];
-		}
-		else {
-			std::string reason;
-			reason = "Error: double slot::prop_const(int i)\n";
-			if (!c1 || !c3) reason += "index value: " + template_funcs::toString(i) + " not valid\n";
-			if (!c2) reason += "propagation constants not computed\n";
-			if (!params_defined) reason += "No parameters defined for the object\n";
-			throw std::invalid_argument(reason);
-
-			return 0.0;
-		}
-	}
-	catch (std::invalid_argument &e) {
-		useful_funcs::exit_failure_output(e.what());
-		exit(EXIT_FAILURE);
-	}
+	coeffs_defined = beta_defined = params_defined = false;
 }
 
 // Definition of the member functions for the slot_neff class
@@ -239,12 +107,14 @@ void slot_neff::set_params(double wavelength, double slot_width, double slab_wid
 
 		if (c10) {
 			
-			lambda = wavelength; // wavelength of light in the slot, in units of um
-			k = Two_PI / lambda; // wavenumber of light in the slot, in units of um^{-1}
+			lambda = wavelength; // wavelength of light in the slot, in units of nm
+			k = Two_PI / lambda; // wavenumber of light in the slot, in units of nm^{-1}
 			k_inv = 1.0 / k; // 1 / k_{0}
 
-			w_sl = slot_width; // width of slot region in units of um
-			w_h = slab_width; // width of high-index slab region in units of um
+			w_sl = slot_width; // width of slot region in units of nm
+			a = 0.5*w_sl; // half slot width in units of nm
+			w_h = slab_width; // width of high-index slab region in units of nm
+			b = a + w_h; // location of high-index slab edge in units of nm
 
 			n_sl = slot_index; // RI of material in the slot
 			n_h = slab_index; // RI of high index slab region
@@ -298,14 +168,15 @@ void slot_neff::neff_search(bool loud)
 			bracket_roots(loud); // locate intervals on which roots can be found
 
 			// if no solutions exist program will exit before this point
-			double sol;
 			int r = static_cast<int>(sub_intervals.size()) - 1; 
 
-			sol = zbrent(sub_intervals[r].get_x_lower(), sub_intervals[r].get_x_upper(), 1.0e-6); 
+			beta = zbrent(sub_intervals[r].get_x_lower(), sub_intervals[r].get_x_upper(), 1.0e-6); 
 
-			beta.push_back(sol); 
+			neff = beta / k; 
 
-			if (loud) std::cout << "beta[" << r + 1 << "] = " << std::setprecision(6) << sol << " , n_{eff} = " << sol / k << "\n";
+			beta_defined = true; 
+
+			if (loud) std::cout << "beta = " << std::setprecision(6) << beta << ", n_{eff} = " << neff << "\n";
 			
 		}
 		else {
@@ -324,40 +195,39 @@ void slot_neff::neff_search(bool loud)
 double slot_neff::eigenequation(double x)
 {
 	// eigenequation whose roots define the propagation constant of the slot waveguide
+	// compute equation (3) of the source paper
 
 	try {
 
 		if (params_defined) {
 			
-			double xsqr, kah, gsl, gcl, phi, arg1, arg2, t1, t2, t3, tmp; 
+			// use local values for kah, gsl, gcl to avoid confusion when computing field profile
+			double xsqr, kkah, ggsl, ggcl, phi, arg1, arg2, t1, t2, t3, tmp; 
 
 			xsqr = template_funcs::DSQR(x); 
 			
 			tmp = k_nh_sqr - xsqr; 
-			kah = tmp > 0 ? sqrt(tmp) : 0.0;
+			kkah = tmp > 0 ? sqrt(tmp) : 0.0;
 
 			tmp = xsqr - k_nsl_sqr; 
-			gsl = tmp > 0 ? sqrt(tmp) : 0.0;
+			ggsl = tmp > 0 ? sqrt(tmp) : 0.0;
 
 			tmp = xsqr - k_ncl_sqr; 
-			gcl = tmp > 0.0 ? sqrt(tmp) : 0.0;
+			ggcl = tmp > 0.0 ? sqrt(tmp) : 0.0;
 
-			if (kah > 0.0) {
-				t2 = (gcl / kah); 
-				t3 = (gsl / kah); 
+			if (kkah > 0.0) {
+				t2 = (ggcl / kkah); 
+				t3 = (ggsl / kkah); 
 			}
 			else {
 				t2 = t3 = 0.0; 
 			}
-			
-			//t2 = kah > 0.0 ? (gcl / kah) : 0.0; 
-			//t3 = kah > 0.0 ? (gsl / kah) : 0.0; 
-			
+		
 			phi = atan(nh_ncl_sqr*t2);
 			
-			arg1 = kah * w_h - phi; 
+			arg1 = kkah * w_h - phi; 
 			
-			arg2 = 0.5*gsl*w_sl; 
+			arg2 = ggsl * a;
 			 
 			t1 = nh_nsl_sqr * t3; 
 
@@ -426,28 +296,6 @@ void slot_neff::print_eigenequation()
 		useful_funcs::exit_failure_output(e.what());
 		exit(EXIT_FAILURE);
 	}
-}
-
-double slot_neff::phi()
-{
-	try {
-
-		if (params_defined) {
-
-		}
-		else {
-			std::string reason;
-			reason = "Error: void slot_neff::double slot_neff::phi()\n";
-			reason += "parameters not defined\n";
-			throw std::invalid_argument(reason);
-		}
-	}
-	catch (std::invalid_argument &e) {
-		useful_funcs::exit_failure_output(e.what());
-		exit(EXIT_FAILURE);
-	}
-
-	return 0.0; 
 }
 
 double slot_neff::zbrent(double x1, double x2, double tol)
@@ -647,6 +495,116 @@ void slot_neff::bracket_roots(bool loud)
 			reason += "parameters not defined\n";
 			throw std::invalid_argument(reason);
 		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
+}
+
+// Definitions for the members of slot_mode class
+// R. Sheehan 12 - 7 - 2019
+
+slot_mode::slot_mode()
+{
+	// default constructor
+}
+
+slot_mode::slot_mode(double wavelength, double slot_width, double slab_width, double slot_index, double slab_index, double cladding_index)
+{
+	// primary constructor
+	set_params(wavelength, slot_width, slab_width, slot_index, slab_index, cladding_index);
+}
+
+void slot_mode::set_mode_params()
+{
+	// Compute various parameters required to compute the slot mode profile
+	// R. Sheehan 12 - 7 - 2019
+
+	try {
+		if (beta_defined) {
+			double xsqr, tmp; 
+
+			xsqr = template_funcs::DSQR(beta);
+
+			tmp = k_nh_sqr - xsqr;
+			kah = tmp > 0 ? sqrt(tmp) : 0.0; // transverse wavenumber in high index slab region
+
+			tmp = xsqr - k_nsl_sqr;
+			gsl = tmp > 0 ? sqrt(tmp) : 0.0; // field decay coefficient in cladding
+
+			tmp = xsqr - k_ncl_sqr;
+			gcl = tmp > 0.0 ? sqrt(tmp) : 0.0; // field decay coefficient in slot region
+		
+			gsl_kah = gsl / kah; // ratio g_{sl} / k_{ah}
+
+			c1 = gsl * a; // argument for the cosh and sinh terms in the profile
+
+			c2 = cosh(c1); c7 = sinh(c1); // sinh and cosh terms in the profile
+
+			c3 = gsl_kah * nsl_sqr_inv; // g_{sl} / (n_{sl}^{2} k_{ah})
+
+			c4 = kah * w_h; // argument for cosine and sine terms in the profile
+
+			c5 = cos(c4); c8 = sin(c4); // cosine and sine terms in the profile
+
+			c6 = nh_nsl_sqr * gsl_kah; // // ratio (n_{h} / n_{sl} )^{2} * ( g_{sl} / k_{ah} )
+
+			c9 = nh_sqr_inv * c2; // ( 1 / n_{h}^{2} ) cosh ( g_{sl} a  )
+
+			c10 = ncl_sqr_inv * ( ( c2 * c5 ) + ( c6 * c7 * c8 ) ); // ( 1 / n_{cl}^{2} ) * various
+
+			coeffs_defined = true; 
+		}
+		else {
+			std::string reason;
+			reason = "Error: void slot_mode::set_mode_params()\n";
+			reason += "Cannot proceed with calculation as propagation constant is not defined\n"; 
+			throw std::invalid_argument(reason);			
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
+}
+
+double slot_mode::Ex(double x)
+{
+	// return the value of the slot waveguide field
+	// working in nm scale for field calculation
+	// R. Sheehan 12 - 7 - 2019
+
+	try {
+	
+		if (coeffs_defined) {
+			
+			double arg, t = fabs(x); 
+
+			if (t < a || fabs(t-a) < 1.0e-9 ) {
+				arg = gsl * x; 
+				return nsl_sqr_inv * cosh(arg); 
+			}
+			else if (t > a && t < b) {
+				arg = kah * (t - a); 
+				return c9 * cos(arg) + c3*sin(arg);
+			}
+			else if (t > b || fabs(t-b) < 1.0e-9) {
+				arg = -1.0*gcl*(t - b); 
+				return c10 * exp(arg);
+			}
+			else {
+				return 0.0; 
+			}		
+		}
+		else {
+			std::string reason;
+			reason = "Error: double slot_mode::Ex(double x)\n";
+			reason += "Cannot proceed with calculation as solution coefficients are not defined\n";
+			throw std::invalid_argument(reason);
+			return 0.0; 
+		}
+
 	}
 	catch (std::invalid_argument &e) {
 		useful_funcs::exit_failure_output(e.what());

@@ -9,11 +9,13 @@ void testing::example_1()
 
 	double ns, nh, wh, ws, wl; 
 
-	wl = 1.55; // wavelength in units of um
+	wl = 1550; // wavelength in units of nm
 	ns = 1.44; // slot index
 	nh = 3.48; // slab index
-	wh = (180.0 / 1000.0); // slab thickness in units of um
-	ws = (25 / 1000.0); // slot thickness in units of um
+	//wh = (180.0 / 1000.0); // slab thickness in units of nm
+	//ws = (25 / 1000.0); // slot thickness in units of nm
+	wh = 180.0; // slab thickness in units of nm
+	ws = 25; // slot thickness in units of nm
 
 	slot_neff waveguide; 
 
