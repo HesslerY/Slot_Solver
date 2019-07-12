@@ -18,5 +18,5 @@ void testing::example_1()
 	slot_neff waveguide; 
 
 	waveguide.set_params(wl, ws, wh, ns, nh, ns); 
-	waveguide.print_eigenequation(); 
+	waveguide.neff_search(true); 
 }
