@@ -611,3 +611,25 @@ double slot_mode::Ex(double x)
 		exit(EXIT_FAILURE);
 	}
 }
+
+void slot_mode::output_mode(int N, double Lx, std::string &storage_directory)
+{
+	// compute the mode profile for the slot waveguide with the given parameters
+
+	try {
+		if (beta_defined) {
+			set_mode_params(); // compute solution coefficients from the known value of slot WG propagation constant
+
+
+		}
+		else {
+			std::string reason = "Error: void slot_mode::output_mode(int N, double Lx, std::string &storage_directory)\n"; 
+			reason += "Cannot compute mode profile without propagation constant having first been computed\n"; 
+			throw std::invalid_argument(reason); 
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
+}

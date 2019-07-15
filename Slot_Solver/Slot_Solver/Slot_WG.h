@@ -119,7 +119,12 @@ private:
 class slot_mode : public slot_neff {
 public:
 	slot_mode(); 
+
 	slot_mode(double wavelength, double slot_width, double slab_width, double slot_index, double slab_index, double cladding_index);
+
+	void output_statistics(std::string &storage_directory);
+
+	void output_mode(int N, double Lx, std::string &storage_directory);
 
 private:
 	void set_mode_params(); 
