@@ -7,6 +7,7 @@
 namespace testing 
 {
 	void example_1(); 
+	void example_2(); 
 }
 
 

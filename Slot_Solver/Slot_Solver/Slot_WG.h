@@ -89,7 +89,7 @@ protected:
 	double ampl; // field amplitude, possibly equal to slot effective index
 
 	double gsl_kah; // ratio g_{sl} / k_{ah}
-	double c1, c2, c3, c4, c5, c6, c7, c8, c9, c10; // various constants needed for mode profile calculation
+	double c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11; // various constants needed for mode profile calculation
 };
 
 // Use this class to compute the propagation constant of a slot waveguide structure
@@ -103,12 +103,12 @@ public:
 
 	void neff_search(bool loud);
 
+	void print_eigenequation();
+
 private:
 	double eigenequation(double x); 
 
-	double zbrent(double x1, double x2, double tol);
-
-	void print_eigenequation();
+	double zbrent(double x1, double x2, double tol);	
 
 	void bracket_roots(bool loud = false); // function for bracketing the roots
 
@@ -124,7 +124,7 @@ public:
 
 	void output_statistics(std::string &storage_directory);
 
-	void output_mode(int N, double Lx, std::string &storage_directory);
+	void output_mode_profile(int N, double Lx, std::string &storage_directory);
 
 private:
 	void set_mode_params(); 

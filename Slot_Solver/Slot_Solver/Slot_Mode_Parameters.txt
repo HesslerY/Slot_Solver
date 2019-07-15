@@ -1,0 +1,15 @@
+Slot Waveguide Parameters
+
+Slot thickness: 75 nm
+Slab thickness: 180 nm
+
+Wavelength: 1550 nm
+Slot RI n_sl: 1.44
+Slab RI n_h: 3.48
+Cladding RI n_cl: 1
+
+Propagation constant: 0.00837397 nm^{-1}
+Effective index: 2.06578
+Transverse wavenumber: 0.0113524 nm^{-1}
+Slot decay coefficient: 0.00600413 nm^{-1}, Slot decay length: 166.552 nm
+Cladding decay coefficient: 0.00732743 nm^{-1}, Cladding decay length: 136.474 nm

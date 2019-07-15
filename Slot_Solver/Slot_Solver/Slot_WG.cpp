@@ -170,9 +170,17 @@ void slot_neff::neff_search(bool loud)
 			// if no solutions exist program will exit before this point
 			int r = static_cast<int>(sub_intervals.size()) - 1; 
 
-			beta = zbrent(sub_intervals[r].get_x_lower(), sub_intervals[r].get_x_upper(), 1.0e-6); 
+			while (r > -1) {
 
-			neff = beta / k; 
+				beta = zbrent(sub_intervals[r].get_x_lower(), sub_intervals[r].get_x_upper(), 1.0e-6);
+
+				neff = beta / k;
+
+				if (fabs(n_h - neff) > 1.0e-6) break; 
+
+				r--; 
+			}
+			 
 
 			beta_defined = true; 
 
@@ -414,7 +422,7 @@ void slot_neff::bracket_roots(bool loud)
 
 		if (params_defined) {
 
-			int nroots = 0, nsub = 151;
+			int nroots = 0, nsub = 251;
 			double dx;
 
 			dx = (beta_high - beta_low) / (nsub - 1);
@@ -552,7 +560,9 @@ void slot_mode::set_mode_params()
 
 			c9 = nh_sqr_inv * c2; // ( 1 / n_{h}^{2} ) cosh ( g_{sl} a  )
 
-			c10 = ncl_sqr_inv * ( ( c2 * c5 ) + ( c6 * c7 * c8 ) ); // ( 1 / n_{cl}^{2} ) * various
+			c10 = c3 * c7; // g_{sl} / (n_{sl}^{2} k_{ah}) * sinh(c1)
+
+			c11 = ncl_sqr_inv * ( ( c2 * c5 ) + ( c6 * c7 * c8 ) ); // ( 1 / n_{cl}^{2} ) * various
 
 			coeffs_defined = true; 
 		}
@@ -582,16 +592,16 @@ double slot_mode::Ex(double x)
 			double arg, t = fabs(x); 
 
 			if (t < a || fabs(t-a) < 1.0e-9 ) {
-				arg = gsl * x; 
-				return nsl_sqr_inv * cosh(arg); 
+				arg = gsl * t; 
+				return neff * nsl_sqr_inv * cosh(arg); 
 			}
 			else if (t > a && t < b) {
 				arg = kah * (t - a); 
-				return c9 * cos(arg) + c3*sin(arg);
+				return neff * (c9 * cos(arg) + c10 * sin(arg));
 			}
 			else if (t > b || fabs(t-b) < 1.0e-9) {
 				arg = -1.0*gcl*(t - b); 
-				return c10 * exp(arg);
+				return neff * c11 * exp(arg);
 			}
 			else {
 				return 0.0; 
@@ -612,18 +622,49 @@ double slot_mode::Ex(double x)
 	}
 }
 
-void slot_mode::output_mode(int N, double Lx, std::string &storage_directory)
+void slot_mode::output_mode_profile(int N, double Lx, std::string &storage_directory)
 {
 	// compute the mode profile for the slot waveguide with the given parameters
+	// N is the number of data points to be used to compute the solutions
+	// Lx is the region length over which the solution must be computed in units of nm
+	// R. Sheehan 15 - 7 - 2019
 
 	try {
-		if (beta_defined) {
-			set_mode_params(); // compute solution coefficients from the known value of slot WG propagation constant
+		bool c1 = N > 11 ? true : false; 
+		bool c2 = Lx > w_sl + 2.0*w_h ? true : false; 
+		bool c10 = c1 && c2 && beta_defined; 
 
+		if (c10) {			
 
+			std::string filename; 
+			std::ofstream write;
+
+			filename = storage_directory + "Slot_Mode_Profile.txt";
+
+			write.open(filename.c_str(), std::ios_base::out | std::ios_base::trunc);
+
+			if (write.is_open()) {
+				double x, dx;
+				dx = Lx / (N - 1); // step-size along x-direction
+
+				if(!coeffs_defined) set_mode_params(); // compute solution coefficients from the known value of slot WG propagation constant
+
+				x = -0.5*Lx; 
+				for (int i = 0; i < N; i++) {
+					write << x << " , " << std::setprecision(10) << Ex(x) << "\n"; 
+					x += dx; 
+				}
+
+				write.close(); 
+			}
+			else {
+				std::string reason = "Error: void slot_mode::output_mode_profile(int N, double Lx, std::string &storage_directory)\n";
+				reason += filename + " is not a valid filename\n";
+				throw std::runtime_error(reason); 
+			}
 		}
 		else {
-			std::string reason = "Error: void slot_mode::output_mode(int N, double Lx, std::string &storage_directory)\n"; 
+			std::string reason = "Error: void slot_mode::output_mode_profile(int N, double Lx, std::string &storage_directory)\n"; 
 			reason += "Cannot compute mode profile without propagation constant having first been computed\n"; 
 			throw std::invalid_argument(reason); 
 		}
@@ -631,5 +672,65 @@ void slot_mode::output_mode(int N, double Lx, std::string &storage_directory)
 	catch (std::invalid_argument &e) {
 		useful_funcs::exit_failure_output(e.what());
 		exit(EXIT_FAILURE);
+	}
+	catch (std::runtime_error &e) {
+		std::cerr << e.what(); 
+	}
+}
+
+void slot_mode::output_statistics(std::string &storage_directory)
+{
+	// compute the mode profile for the slot waveguide with the given parameters
+
+	try {
+		if (beta_defined) {		
+
+			std::string filename;
+			std::ofstream write;
+
+			filename = storage_directory + "Slot_Mode_Parameters.txt";
+
+			write.open(filename.c_str(), std::ios_base::out | std::ios_base::trunc);
+
+			if (write.is_open()) {
+			
+				if (!coeffs_defined) set_mode_params(); // compute solution coefficients from the known value of slot WG propagation constant
+
+				write << "Slot Waveguide Parameters\n\n";
+
+				write << "Slot thickness: " << w_sl << " nm\n";
+				write << "Slab thickness: " << w_h << " nm\n\n";
+
+				write << "Wavelength: " << lambda << " nm\n";
+				write << "Slot RI n_sl: " << n_sl << "\n";
+				write << "Slab RI n_h: " << n_h << "\n";
+				write << "Cladding RI n_cl: " << n_cl << "\n\n";
+
+				write << "Propagation constant: " << beta << " nm^{-1}\n"; 
+				write << "Effective index: " << neff << "\n"; 
+				write << "Transverse wavenumber: " << kah << " nm^{-1}\n"; 
+				write << "Slot decay coefficient: " << gsl << " nm^{-1}, Slot decay length: "<<1/gsl<<" nm\n"; 
+				write << "Cladding decay coefficient: " << gcl << " nm^{-1}, Cladding decay length: "<<1/gcl<<" nm\n"; 
+
+				write.close(); 
+			}
+			else {
+				std::string reason = "Error: void slot_mode::output_mode_profile(int N, double Lx, std::string &storage_directory)\n";
+				reason += filename + " is not a valid filename\n";
+				throw std::runtime_error(reason);
+			}
+		}
+		else {
+			std::string reason = "Error: void slot_mode::output_statistics(std::string &storage_directory)\n";
+			reason += "Cannot write report without propagation constant having first been computed\n";
+			throw std::invalid_argument(reason);
+		}
+	}
+	catch (std::invalid_argument &e) {
+		useful_funcs::exit_failure_output(e.what());
+		exit(EXIT_FAILURE);
+	}
+	catch (std::runtime_error &e) {
+		std::cerr << e.what();
 	}
 }
